@@ -29,13 +29,12 @@ var game = (function(){
   
     var gameOver = false;
   
-    //1. Create a variable to hold the score
     var score = 0;
   
   
     function launchSpawns(){
       spawner = setInterval(()=>{
-  
+        //Use psuedo-random strings to name the new spawns
         var text = "";
         var possible = "abcdefghijklmnopqrstuvwxyz";
   
@@ -44,7 +43,7 @@ var game = (function(){
         }
   
         spawns[text] = {
-          x:Math.floor(Math.random()*this.canvas.width),
+          x:Math.floor(Math.random()*canvas.width),
           y:spawn.y,
           h:spawn.h,
           w:spawn.w,
@@ -55,106 +54,109 @@ var game = (function(){
       },400);
     }
   
+    function moveSpawns(){
   
+      if(Object.keys(spawns).length>0){
+        for(let spawn in spawns){
+  
+          if(spawns[spawn].y<=canvas.height){
+  
+  
+            ctx.fillStyle = spawns[spawn].fill;
+  
+  
+            ctx.save();
+  
+            ctx.clearRect(
+              spawns[spawn].x-1,
+              spawns[spawn].y-spawns[spawn].speed,
+              spawns[spawn].w+2,
+              spawns[spawn].h+2
+            );
+  
+            ctx.fillRect(
+              spawns[spawn].x,
+              spawns[spawn].y = (spawns[spawn].y+spawns[spawn].speed),
+              spawns[spawn].w,
+              spawns[spawn].h
+            );
+  
+            ctx.restore();
+  
+            if (
+              player.x < spawns[spawn].x + spawns[spawn].w &&
+              spawns[spawn].x > player.x && spawns[spawn].x < (player.x + player.w) &&
+              player.y < spawns[spawn].y + spawns[spawn].h &&
+              player.y + player.h > spawns[spawn].y
+            ){
+              gameOver = true;
+              cancelAnimationFrame(animation);
+              clearInterval(spawner);
+            }
+  
+          }else{
+            score = score + 10;
+            document.getElementById('score').innerHTML = score;
+            delete spawns[spawn];
+          }
+        }
+      }
+    }
+  
+    function movePlayer(){
+      ctx.fillStyle=player.fill;
+  
+      if(player.dir === 'right'){
+  
+        ctx.clearRect(
+          player.x-player.speed,
+          player.y-1,
+          player.w+2,
+          player.h+2
+        );
+  
+        ctx.fillRect(
+          player.x = (player.x + player.speed),
+          player.y,
+          player.w,
+          player.h
+        );
+  
+        if((player.x + player.w) >= canvas.width){
+          player.dir = 'left';
+        }
+  
+      }else{
+  
+        ctx.clearRect(
+          player.x+player.speed,
+          player.y-1,
+          player.w+2,
+          player.h+2
+        );
+  
+        ctx.fillRect(
+          player.x = (player.x - player.speed),
+          player.y,
+          player.w,
+          player.h
+        );
+  
+        if(player.x <= 0){
+          player.dir = 'right';
+        }
+      }
+    }
+  
+    function animate(){
+      movePlayer();
+      moveSpawns();
+      if(gameOver===false){
+        animation = window.requestAnimationFrame(animate.bind(animation));
+      }
+    }
   
     return {
-      moveSpawns: function(){
-  
-        if(Object.keys(spawns).length>0){
-          for(let spawn in spawns){
-  
-            if(spawns[spawn].y<=canvas.height){
-  
-  
-              ctx.fillStyle = spawns[spawn].fill;
-  
-  
-              ctx.save();
-  
-              ctx.clearRect(
-                spawns[spawn].x-1,
-                spawns[spawn].y-spawns[spawn].speed,
-                spawns[spawn].w+2,
-                spawns[spawn].h+2
-              );
-  
-              ctx.fillRect(
-                spawns[spawn].x,
-                spawns[spawn].y = (spawns[spawn].y+spawns[spawn].speed),
-                spawns[spawn].w,
-                spawns[spawn].h
-              );
-  
-              ctx.restore();
-  
-              if (
-                player.x < spawns[spawn].x + spawns[spawn].w &&
-                spawns[spawn].x > player.x && spawns[spawn].x < (player.x + player.w) &&
-                player.y < spawns[spawn].y + spawns[spawn].h &&
-                player.y + player.h > spawns[spawn].y
-              ){
-                gameOver = true;
-                cancelAnimationFrame(animation);
-                clearInterval(spawner);
-              }
-  
-            }else{
-              //2. Increment the score when any time
-              //an enemy sprite move off screen
-              score = score + 10;
-              //3. Write the score to a separate div
-              document.getElementById('score').innerHTML = score;
-              delete spawns[spawn];
-            }
-          }
-        }
-  
-      },
-  
-      player: function(){
-        ctx.fillStyle=player.fill;
-  
-        if(player.dir === 'right'){
-  
-          ctx.clearRect(
-            player.x-player.speed,
-            player.y-1,
-            player.w+2,
-            player.h+2
-          );
-  
-          ctx.fillRect(
-            player.x = (player.x + player.speed),
-            player.y,
-            player.w,
-            player.h
-          );
-  
-          if((player.x + player.w) >= canvas.width){
-            player.dir = 'left';
-          }
-  
-        }else{
-  
-          ctx.clearRect(
-            player.x+player.speed,
-            player.y-1,
-            player.w+2,
-            player.h+2
-          );
-  
-          ctx.fillRect(
-            player.x = (player.x - player.speed),
-            player.y,
-            player.w,
-            player.h
-          );
-  
-          if(player.x <= 0){
-            player.dir = 'right';
-          }
-        }
-      },
   
       changeDirection: function(){
         if(player.dir === 'left'){
@@ -164,21 +166,12 @@ var game = (function(){
         }
       },
   
-      animate: function(){
-        this.player();
-        this.moveSpawns();
-        if(gameOver===false){
-          animation = window.requestAnimationFrame(this.animate.bind(this));
-        }
-  
-      },
-  
       init: function(){
         canvas.height = 600;
         canvas.width = 800;
   
         launchSpawns();
-        this.animate();
+        animate();
       }
     }
   })();
